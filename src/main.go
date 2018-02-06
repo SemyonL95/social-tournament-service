@@ -1,18 +1,30 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
+
 	_ "github.com/lib/pq"
+
+	"github.com/jmoiron/sqlx"
 )
 
-var (
-	db *sql.DB
-)
+var db *sqlx.DB
 
 func main() {
+	var err error
+
+	db, err = setDatabaseConn()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Println("Database connections setup successfuly")
+
+	serve()
+}
+
+func setDatabaseConn() (*sqlx.DB, error) {
 	connInfo := fmt.Sprintf(
 		"user=%s dbname=%s password=%s host=%s port=%s sslmode=disable",
 		"postgres",
@@ -23,51 +35,31 @@ func main() {
 	)
 
 	var err error
-	db, err = sql.Open("postgres", connInfo)
+
+	db, err := sqlx.Open("postgres", connInfo)
+
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		return nil, err
 	}
 
-	_, err = db.Exec(
-		`create table if not exists mydata (
-			id serial primary key,
-			val integer not null
-		)`)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return db, nil
+}
 
-	http.HandleFunc("/", serveIndex)
+func serve() {
+	http.HandleFunc("/", indexPage)
+
 	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
-func serveIndex(w http.ResponseWriter, req *http.Request) {
+func indexPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintln(w, "Hello, World!\n")
-
-	_, err := db.Exec("insert into mydata(val) values(1)")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rows, err := db.Query("select id from mydata")
-	defer rows.Close()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for rows.Next() {
-		var id int
-
-		err = rows.Scan(&id)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Fprintf(w, "ID: %d\n", id)
-	}
+	w.Write([]byte("Hello world"))
 }
