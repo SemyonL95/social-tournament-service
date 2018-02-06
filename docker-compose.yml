@@ -1,18 +1,18 @@
 version: '3'
 services:
   postgres:
-      image: postgres:latest
+      image: postgres:alpine
+      volumes:
+          - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       ports:
           - "5432:5432"
-      volumes:
-          - /var/lib/postgresql/data
       environment:
           POSTGRES_PASSWORD: mypass
 
   go:
-      build: ./docker
+      build: ./docker/Go
       volumes:
-            - .:/Development/projects/social-tournament-service
+          - .:/Development/projects/social-tournament-service
       working_dir: /Development/projects/social-tournament-service
       command: go run src/main.go
       links:
@@ -26,6 +26,6 @@ services:
           - "80:80"
           - "443:443"
       volumes:
-          - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+          - ./docker/Nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       links:
           - go:app
