@@ -1,55 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	_ "github.com/lib/pq"
 
-	"github.com/jmoiron/sqlx"
+	"./models"
+	"./db"
+	"fmt"
 )
 
-var db *sqlx.DB
 
 func main() {
-	var err error
-
-	db, err = setDatabaseConn()
+	conn, err := db.InitDatabaseConn()
 	if err != nil {
 		panic(err.Error())
 	}
+	model := models.InitModel(conn)
 
-	fmt.Println("Database connections setup successfuly")
+	model.Testdb()
 
 	serve()
 }
 
-func setDatabaseConn() (*sqlx.DB, error) {
-	connInfo := fmt.Sprintf(
-		"user=%s dbname=%s password=%s host=%s port=%s sslmode=disable",
-		"postgres",
-		"postgres",
-		"mypass",
-		"db",
-		"5432",
-	)
-
-	var err error
-
-	db, err := sqlx.Open("postgres", connInfo)
-
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
 
 func serve() {
 	http.HandleFunc("/", indexPage)
