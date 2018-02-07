@@ -23,3 +23,9 @@ CREATE TABLE IF NOT EXISTS bakers (
   CONSTRAINT foreign_baker_id FOREIGN KEY (baker_id) REFERENCES users (id),
   CONSTRAINT foreign_player_id FOREIGN KEY (player_id) REFERENCES users (id)
 );
+CREATE TABLE IF NOT EXISTS results (
+  id        SERIAL PRIMARY KEY UNIQUE,
+  winner_id INT NOT NULL,
+  prize   NUMERIC(15, 2),
+  CONSTRAINT foreign_winner_id FOREIGN KEY (winner_id) REFERENCES users (id)
+);
