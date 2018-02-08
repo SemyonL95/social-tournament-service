@@ -1,0 +1,4 @@
+package: github.com/SemyonL95/social-tournament-service/src
+import:
+- package: github.com/jmoiron/sqlx
+- package: github.com/lib/pq

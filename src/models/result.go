@@ -2,6 +2,6 @@ package models
 
 type Result struct {
 	Id int
-	WinnerId int `db: "winner_id"`
+	WinnerId int `database: "winner_id"`
 	Prize float64
 }
