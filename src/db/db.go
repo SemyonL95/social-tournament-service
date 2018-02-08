@@ -2,7 +2,11 @@ package db
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/jmoiron/sqlx"
+
+	"../models"
 )
 
 const (
@@ -15,6 +19,22 @@ const (
 
 type DB struct {
 	conn *sqlx.DB
+}
+
+type NotFoundError struct {
+	text string
+}
+
+type ForbiddenError struct {
+	text string
+}
+
+func (err *ForbiddenError) Error() string {
+	return fmt.Sprintf("%s %s", err.text, "Forbidden")
+}
+
+func (err *NotFoundError) Error() string {
+	return fmt.Sprintf("%s %s", err.text, "Not Found")
 }
 
 func InitDatabaseConn() (*DB, error) {
@@ -39,11 +59,63 @@ func InitDatabaseConn() (*DB, error) {
 
 	databaseConn := &DB{db}
 
-	fmt.Println("Database connections setup successfuly")
-
 	return databaseConn, nil
 }
 
-func (db *DB) Testdb() {
-	fmt.Println("DBTESTED")
+func (db *DB) FundOrCreateUser(username string, credits float64) (string, error) {
+	sql := `INSERT INTO users (username, credits) VALUES ($1, $2) 
+			ON CONFLICT (username) DO UPDATE SET credits = $2 RETURNING username;`
+
+	stmt, err := db.conn.Prepare(sql)
+	if err != nil {
+		log.Println(err.Error())
+		return "", err
+	}
+	defer stmt.Close()
+
+	var returnUsername string
+	err = stmt.QueryRow(username, credits).Scan(&returnUsername)
+	if err != nil {
+		log.Println(err.Error())
+		return "", err
+	}
+
+	return returnUsername, nil
+}
+
+func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User, error, *NotFoundError, *ForbiddenError) {
+	tx := db.conn.MustBegin()
+	user := models.User{}
+
+	err := tx.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
+	if err != nil {
+		errMsg := fmt.Sprintf("User With playerID - %s", username)
+		return nil, nil, &NotFoundError{errMsg}, nil
+	}
+
+	if (user.Credits - credits) < 0 {
+		return nil, nil, nil, &ForbiddenError{"User don't have enough points"}
+	}
+
+	user.Credits = user.Credits - credits
+	tx.NamedExec("UPDATE users SET credits = :credits WHERE username = :username", &user)
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return nil, err, nil, nil
+	}
+
+	return &user, nil, nil, nil
+}
+
+func (db *DB) GetByUsername(username string) (*models.User, *NotFoundError) {
+	user := models.User{}
+	err := db.conn.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
+
+	if err != nil {
+		errMsg := fmt.Sprintf("User With playerID - %s", username)
+		return nil, &NotFoundError{errMsg}
+	}
+
+	return &user, nil
 }
