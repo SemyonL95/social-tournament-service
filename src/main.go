@@ -63,13 +63,13 @@ func fund(db *db.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username, err = db.FundOrCreateUser(username, parsedCredits)
+	user, err := db.FundOrCreateUser(username, parsedCredits)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write([]byte("user " + username + " funded"))
+	w.Write([]byte("user " + user.Username + " funded"))
 	return
 }
 

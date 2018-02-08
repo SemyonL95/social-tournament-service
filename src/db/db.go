@@ -62,25 +62,25 @@ func InitDatabaseConn() (*DB, error) {
 	return databaseConn, nil
 }
 
-func (db *DB) FundOrCreateUser(username string, credits float64) (string, error) {
+func (db *DB) FundOrCreateUser(username string, credits float64) (*models.User, error) {
 	sql := `INSERT INTO users (username, credits) VALUES ($1, $2) 
-			ON CONFLICT (username) DO UPDATE SET credits = $2 RETURNING username;`
+			ON CONFLICT (username) DO UPDATE SET credits = $2 RETURNING *;`
 
 	stmt, err := db.conn.Prepare(sql)
 	if err != nil {
 		log.Println(err.Error())
-		return "", err
+		return nil, err
 	}
 	defer stmt.Close()
 
-	var returnUsername string
-	err = stmt.QueryRow(username, credits).Scan(&returnUsername)
+	user := models.User{}
+	err = stmt.QueryRow(username, credits).Scan(&user.Id, &user.Username, &user.Credits)
 	if err != nil {
 		log.Println(err.Error())
-		return "", err
+		return nil, err
 	}
 
-	return returnUsername, nil
+	return &user, nil
 }
 
 func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User, error, *NotFoundError, *ForbiddenError) {
