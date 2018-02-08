@@ -12,7 +12,7 @@ func ValidateUsername(value string) (bool) {
 	return true
 }
 
-func ValidateFloatNotNegtive(value float64) (bool) {
+func ValidateFloatNotNegative(value float64) (bool) {
 	if value < 0 {
 		return false
 	}

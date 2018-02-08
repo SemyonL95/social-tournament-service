@@ -63,7 +63,7 @@ func (db *DB) FundOrCreateUser(username string, credits float64) error {
 	return nil
 }
 
-func (db *DB) TakePointsFromUser(username string, credits float64) (error) {
+func (db *DB) TakePointsFromUser(username string, credits float64) error {
 	tx, err := db.conn.Beginx()
 	if err != nil {
 		log.Println(err)
@@ -85,6 +85,17 @@ func (db *DB) TakePointsFromUser(username string, credits float64) (error) {
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func (db *DB) CreateTournament(id int, deposit float64) error {
+	sql := `INSERT INTO tournaments (id, deposit) VALUES ($1, $2)`
+
+	_, err := db.conn.Exec(sql, id, deposit)
+	if err != nil {
 		return err
 	}
 

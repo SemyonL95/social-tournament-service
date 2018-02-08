@@ -12,8 +12,8 @@ services:
   go:
       build: ./docker/Go
       volumes:
-          - .:/Development/projects/social-tournament-service
-      working_dir: /Development/projects/social-tournament-service
+          - .:/go/src/github.com/SemyonL95/social-tournament-service
+      working_dir: /go/src/github.com/SemyonL95/social-tournament-service
       command: go run src/main.go
       links:
           - postgres:database

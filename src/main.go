@@ -3,12 +3,13 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"database/sql"
 
 	_ "github.com/lib/pq"
 
 	"github.com/SemyonL95/social-tournament-service/src/database"
 	"github.com/SemyonL95/social-tournament-service/src/validators"
-	"database/sql"
+	"log"
 )
 
 func main() {
@@ -27,6 +28,10 @@ func serve(db *database.DB) {
 
 	http.HandleFunc("/take", func(w http.ResponseWriter, r *http.Request) {
 		take(db, w, r)
+	})
+
+	http.HandleFunc("/announceTournament", func(w http.ResponseWriter, r *http.Request) {
+		announceTournament(db, w, r)
 	})
 
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -57,7 +62,7 @@ func fund(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validated = validators.ValidateFloatNotNegtive(parsedCredits)
+	validated = validators.ValidateFloatNotNegative(parsedCredits)
 	if !validated {
 		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
@@ -94,7 +99,7 @@ func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validated = validators.ValidateFloatNotNegtive(parsedCredits)
+	validated = validators.ValidateFloatNotNegative(parsedCredits)
 	if !validated {
 		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
@@ -116,5 +121,54 @@ func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte("Points has been taken successfully"))
+	return
+}
+
+func announceTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.FormValue("id")
+	deposit := r.FormValue("deposit")
+
+	if id != "" {
+		log.Println("id empty")
+		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		return
+	}
+
+	parsedId, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("id convertion error")
+		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		return
+	}
+
+	if parsedId <= 0 {
+		log.Println("id <= 0")
+		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		return
+	}
+
+	parsedDeposit, err := strconv.ParseFloat(deposit, 64)
+	if err != nil {
+		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		return
+	}
+
+	validated := validators.ValidateFloatNotNegative(parsedDeposit)
+	if !validated {
+		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		return
+	}
+
+	err = db.CreateTournament(parsedId, parsedDeposit)
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+
+	w.Write([]byte("Tournament has been created successfully"))
 	return
 }
