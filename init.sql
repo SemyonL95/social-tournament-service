@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   credits  NUMERIC(15, 2) NOT NULL
 );
 CREATE TABLE IF NOT EXISTS tournaments (
-  id      SERIAL PRIMARY KEY UNIQUE,
+  id      int PRIMARY KEY UNIQUE,
   deposit NUMERIC(15, 2)
 );
 CREATE TABLE IF NOT EXISTS players (
