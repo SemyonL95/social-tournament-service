@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"../models"
+	"../utils"
 )
 
 const (
@@ -19,22 +20,6 @@ const (
 
 type DB struct {
 	conn *sqlx.DB
-}
-
-type NotFoundError struct {
-	text string
-}
-
-type ForbiddenError struct {
-	text string
-}
-
-func (err *ForbiddenError) Error() string {
-	return fmt.Sprintf("%s %s", err.text, "Forbidden")
-}
-
-func (err *NotFoundError) Error() string {
-	return fmt.Sprintf("%s %s", err.text, "Not Found")
 }
 
 func InitDatabaseConn() (*DB, error) {
@@ -83,18 +68,18 @@ func (db *DB) FundOrCreateUser(username string, credits float64) (*models.User, 
 	return &user, nil
 }
 
-func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User, error, *NotFoundError, *ForbiddenError) {
+func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User, error) {
 	tx := db.conn.MustBegin()
 	user := models.User{}
 
 	err := tx.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
 	if err != nil {
 		errMsg := fmt.Sprintf("User With playerID - %s", username)
-		return nil, nil, &NotFoundError{errMsg}, nil
+		return nil,&utils.NotFoundError{errMsg}
 	}
 
 	if (user.Credits - credits) < 0 {
-		return nil, nil, nil, &ForbiddenError{"User don't have enough points"}
+		return nil, &utils.ForbiddenError{"User don't have enough points"}
 	}
 
 	user.Credits = user.Credits - credits
@@ -102,19 +87,7 @@ func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
-		return nil, err, nil, nil
-	}
-
-	return &user, nil, nil, nil
-}
-
-func (db *DB) GetByUsername(username string) (*models.User, *NotFoundError) {
-	user := models.User{}
-	err := db.conn.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
-
-	if err != nil {
-		errMsg := fmt.Sprintf("User With playerID - %s", username)
-		return nil, &NotFoundError{errMsg}
+		return nil, err
 	}
 
 	return &user, nil

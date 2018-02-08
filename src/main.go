@@ -3,8 +3,6 @@ package main
 import (
 	"net/http"
 	"strconv"
-	//"log"
-
 	_ "github.com/lib/pq"
 
 	"./db"
@@ -100,20 +98,21 @@ func take(db *db.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err, notFoundErr, forbiddenErr := db.TakePointsFromUser(username, parsedCredits)
-	if notFoundErr != nil {
-		http.Error(w, notFoundErr.Error(), http.StatusNotFound)
-		return
-	}
-
-	if forbiddenErr != nil {
-		http.Error(w, forbiddenErr.Error(), http.StatusForbidden)
-		return
-	}
-
+	user, err := db.TakePointsFromUser(username, parsedCredits)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		switch err.(type) {
+		case *utils.NotFoundError:
+			http.Error(w, err.Error(), http.StatusNotFound)
+			break
+		case *utils.ForbiddenError:
+			http.Error(w, err.Error(), http.StatusForbidden)
+			break
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
+
+	w.Write([]byte("User " + user.Username + " : points " + strconv.FormatFloat(user.Credits, 'f', 2, 64)))
 	return
 }
