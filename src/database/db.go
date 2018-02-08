@@ -1,4 +1,4 @@
-package db
+package database
 
 import (
 	"fmt"
@@ -7,16 +7,18 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/SemyonL95/social-tournament-service/src/models"
-	"github.com/SemyonL95/social-tournament-service/src/utils"
+	"errors"
 )
 
 const (
 	user     = "postgres"
 	dbname   = "postgres"
 	password = "mypass"
-	host     = "db"
+	host     = "database"
 	port     = "5432"
 )
+
+var ErrNotEnoughMoney = errors.New("not enough money")
 
 type DB struct {
 	conn *sqlx.DB
@@ -74,12 +76,11 @@ func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User
 
 	err := tx.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
 	if err != nil {
-		errMsg := fmt.Sprintf("User With playerID - %s", username)
-		return nil, &utils.NotFoundError{errMsg}
+		return nil, err
 	}
 
 	if (user.Credits - credits) < 0 {
-		return nil, &utils.ForbiddenError{"User don't have enough points"}
+		return nil, ErrNotEnoughMoney
 	}
 
 	user.Credits = user.Credits - credits

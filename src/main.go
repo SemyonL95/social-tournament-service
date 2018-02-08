@@ -5,12 +5,14 @@ import (
 	"strconv"
 
 	_ "github.com/lib/pq"
-	"github.com/SemyonL95/social-tournament-service/src/db"
-	"github.com/SemyonL95/social-tournament-service/src/utils"
+
+	"github.com/SemyonL95/social-tournament-service/src/database"
+	"github.com/SemyonL95/social-tournament-service/src/validators"
+	"database/sql"
 )
 
 func main() {
-	db, err := db.InitDatabaseConn()
+	db, err := database.InitDatabaseConn()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -18,7 +20,7 @@ func main() {
 	serve(db)
 }
 
-func serve(db *db.DB) {
+func serve(db *database.DB) {
 	http.HandleFunc("/fund", func(w http.ResponseWriter, r *http.Request) {
 		fund(db, w, r)
 	})
@@ -33,7 +35,7 @@ func serve(db *db.DB) {
 }
 
 //TODO REFACTOR ALL THIS CRAP
-func fund(db *db.DB, w http.ResponseWriter, r *http.Request) {
+func fund(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -43,7 +45,7 @@ func fund(db *db.DB, w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("playerId")
 	credits := r.FormValue("points")
 
-	validated := utils.ValidateString(username)
+	validated := validators.ValidateUsername(username)
 	if !validated {
 		http.Error(w, "playerId is required and have to be a string A-Za-z0-9 min: 1, max: 20 characters \n", http.StatusUnprocessableEntity)
 		return
@@ -55,7 +57,7 @@ func fund(db *db.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validated = utils.ValidateFloatNotNagtive(parsedCredits)
+	validated = validators.ValidateFloatNotNegtive(parsedCredits)
 	if !validated {
 		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
@@ -71,7 +73,7 @@ func fund(db *db.DB, w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func take(db *db.DB, w http.ResponseWriter, r *http.Request) {
+func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -80,7 +82,7 @@ func take(db *db.DB, w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("playerId")
 	credits := r.FormValue("points")
 
-	validated := utils.ValidateString(username)
+	validated := validators.ValidateUsername(username)
 	if !validated {
 		http.Error(w, "playerId is required and have to be a string A-Za-z0-9 min: 1, max: 20 characters \n", http.StatusUnprocessableEntity)
 		return
@@ -92,7 +94,7 @@ func take(db *db.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validated = utils.ValidateFloatNotNagtive(parsedCredits)
+	validated = validators.ValidateFloatNotNegtive(parsedCredits)
 	if !validated {
 		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
@@ -100,11 +102,11 @@ func take(db *db.DB, w http.ResponseWriter, r *http.Request) {
 
 	user, err := db.TakePointsFromUser(username, parsedCredits)
 	if err != nil {
-		switch err.(type) {
-		case *utils.NotFoundError:
+		switch err {
+		case sql.ErrNoRows:
 			http.Error(w, err.Error(), http.StatusNotFound)
 			break
-		case *utils.ForbiddenError:
+		case database.ErrNotEnoughMoney:
 			http.Error(w, err.Error(), http.StatusForbidden)
 			break
 		default:

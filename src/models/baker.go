@@ -2,7 +2,7 @@ package models
 
 type Baker struct {
 	Id int
-	PlayerId int `db: "player_id"`
-	BakerId int `db: "baker_id"`
+	PlayerId int `database: "player_id"`
+	BakerId int `database: "baker_id"`
 	Deposit float64
 }
