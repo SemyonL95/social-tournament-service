@@ -63,13 +63,13 @@ func fund(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := db.FundOrCreateUser(username, parsedCredits)
+	err = db.FundOrCreateUser(username, parsedCredits)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write([]byte("user " + user.Username + " funded"))
+	w.Write([]byte("user " + username + " funded"))
 	return
 }
 
@@ -100,7 +100,7 @@ func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := db.TakePointsFromUser(username, parsedCredits)
+	err = db.TakePointsFromUser(username, parsedCredits)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -115,6 +115,6 @@ func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("User " + user.Username + " : points " + strconv.FormatFloat(user.Credits, 'f', 2, 64)))
+	w.Write([]byte("Points has been taken successfully"))
 	return
 }

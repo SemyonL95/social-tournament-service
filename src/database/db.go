@@ -49,47 +49,44 @@ func InitDatabaseConn() (*DB, error) {
 	return databaseConn, nil
 }
 
-func (db *DB) FundOrCreateUser(username string, credits float64) (*models.User, error) {
+func (db *DB) FundOrCreateUser(username string, credits float64) error {
 	sql := `INSERT INTO users (username, credits) VALUES ($1, $2) 
-			ON CONFLICT (username) DO UPDATE SET credits = $2 RETURNING *;`
+			ON CONFLICT (username) DO UPDATE SET credits = $2;`
 
-	stmt, err := db.conn.Prepare(sql)
+	_, err := db.conn.Exec(sql, username, credits)
+
 	if err != nil {
 		log.Println(err.Error())
-		return nil, err
-	}
-	defer stmt.Close()
-
-	user := models.User{}
-	err = stmt.QueryRow(username, credits).Scan(&user.Id, &user.Username, &user.Credits)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
+		return err
 	}
 
-	return &user, nil
+	return nil
 }
 
-func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User, error) {
-	tx := db.conn.MustBegin()
+func (db *DB) TakePointsFromUser(username string, credits float64) (error) {
+	tx, err := db.conn.Beginx()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 	user := models.User{}
 
-	err := tx.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
+	err = tx.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if (user.Credits - credits) < 0 {
-		return nil, ErrNotEnoughMoney
+		return ErrNotEnoughMoney
 	}
 
 	user.Credits = user.Credits - credits
-	tx.NamedExec("UPDATE users SET credits = :credits WHERE username = :username", &user)
+	tx.NamedExec(`UPDATE users SET credits = :credits WHERE username = :username`, &user)
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return err
 	}
 
-	return &user, nil
+	return nil
 }
