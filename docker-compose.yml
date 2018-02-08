@@ -16,7 +16,7 @@ services:
       working_dir: /Development/projects/social-tournament-service
       command: go run src/main.go
       links:
-          - postgres:db
+          - postgres:database
       ports:
           - "8080"
 
