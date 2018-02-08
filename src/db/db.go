@@ -6,8 +6,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"../models"
-	"../utils"
+	"github.com/SemyonL95/social-tournament-service/src/models"
+	"github.com/SemyonL95/social-tournament-service/src/utils"
 )
 
 const (
@@ -75,7 +75,7 @@ func (db *DB) TakePointsFromUser(username string, credits float64) (*models.User
 	err := tx.Get(&user, `SELECT * FROM users WHERE username = $1 FOR UPDATE`, username)
 	if err != nil {
 		errMsg := fmt.Sprintf("User With playerID - %s", username)
-		return nil,&utils.NotFoundError{errMsg}
+		return nil, &utils.NotFoundError{errMsg}
 	}
 
 	if (user.Credits - credits) < 0 {

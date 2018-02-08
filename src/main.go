@@ -3,10 +3,10 @@ package main
 import (
 	"net/http"
 	"strconv"
-	_ "github.com/lib/pq"
 
-	"./db"
-	"./utils"
+	_ "github.com/lib/pq"
+	"github.com/SemyonL95/social-tournament-service/src/db"
+	"github.com/SemyonL95/social-tournament-service/src/utils"
 )
 
 func main() {
