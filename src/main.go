@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"strconv"
 	"database/sql"
-
-	_ "github.com/lib/pq"
+	"log"
 
 	"github.com/SemyonL95/social-tournament-service/src/database"
 	"github.com/SemyonL95/social-tournament-service/src/validators"
-	"log"
+	"github.com/lib/pq"
+	"fmt"
 )
 
 func main() {
@@ -133,7 +133,7 @@ func announceTournament(db *database.DB, w http.ResponseWriter, r *http.Request)
 	id := r.FormValue("id")
 	deposit := r.FormValue("deposit")
 
-	if id != "" {
+	if id == "" {
 		log.Println("id empty")
 		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
@@ -166,7 +166,17 @@ func announceTournament(db *database.DB, w http.ResponseWriter, r *http.Request)
 
 	err = db.CreateTournament(parsedId, parsedDeposit)
 	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
+		var errMsg string
+		if driverError, ok := err.(*pq.Error); ok && driverError.Code == "23505" {
+
+			//See postgres errors codes https://www.postgresql.org/docs/10/static/errcodes-appendix.html (unique_violation)
+			errMsg = fmt.Sprintf("tournament with id - %d already exists", parsedId)
+			http.Error(w, errMsg, http.StatusConflict)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Write([]byte("Tournament has been created successfully"))
