@@ -4,8 +4,10 @@ import (
 	"regexp"
 )
 
+var playerIDRegexp = regexp.MustCompile("^[A-Za-z0-9]{1,20}$")
+
 func ValidateUsername(value string) (bool) {
-	if m, _ := regexp.MatchString("^[A-Za-z0-9]{1,20}$", value); !m {
+	if m := playerIDRegexp.MatchString(value); !m {
 		return false
 	}
 
