@@ -305,3 +305,22 @@ func retryTransact(db *sqlx.DB, txFunc func(*sqlx.Tx) error, retryNumber int) er
 	}
 	return err
 }
+
+func (db *DB) Truncate() error {
+	return retryTransact(db.conn, db.txTruncate(), 5)
+}
+
+func (db *DB) txTruncate() func(*sqlx.Tx) error {
+	return func(tx *sqlx.Tx) error {
+		_, err := tx.Exec("TRUNCATE users CASCADE")
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.Exec("TRUNCATE tournaments CASCADE")
+		if err != nil {
+			return nil
+		}
+		return nil
+	}
+}

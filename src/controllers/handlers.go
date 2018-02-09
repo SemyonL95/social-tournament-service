@@ -272,3 +272,18 @@ func resultTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("success"))
 	return
 }
+
+func reset(db *database.DB, w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	err := db.Truncate()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("success"))
+	return
+}
