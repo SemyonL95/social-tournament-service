@@ -13,7 +13,18 @@ import (
 
 	"github.com/SemyonL95/social-tournament-service/src/database"
 	"github.com/SemyonL95/social-tournament-service/src/validators"
+	"io/ioutil"
+	"encoding/json"
 )
+
+type Winners struct {
+	Winners []Winner
+}
+
+type Winner struct {
+	PlayerID string
+	Prize float64
+}
 
 var BackersRegExp = regexp.MustCompile(`bakerId=[A-Za-z0-9]*`)
 func main() {
@@ -36,6 +47,9 @@ func serve(db *database.DB) {
 		announceTournament(db, w, r)
 	})
 	http.HandleFunc("/joinTournament", func(w http.ResponseWriter, r *http.Request) {
+		joinTournament(db, w, r)
+	})
+	http.HandleFunc("/resultTournament", func(w http.ResponseWriter, r *http.Request) {
 		joinTournament(db, w, r)
 	})
 
@@ -250,5 +264,26 @@ func joinTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte("success"))
+	return
+}
+
+func resultTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	b, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	winners := Winners{}
+	json.Unmarshal(b, &winners)
+
+	log.Println(winners)
+
 	return
 }
