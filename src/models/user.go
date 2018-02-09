@@ -3,5 +3,5 @@ package models
 type User struct {
 	ID       int     `database:"id"`
 	Username string  `database:"username"`
-	Credits  float64 `database:"credits"`
+	Points   float64 `database:"points"`
 }

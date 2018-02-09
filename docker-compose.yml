@@ -4,6 +4,7 @@ services:
       image: postgres:alpine
       volumes:
           - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      command: postgres -c default_transaction_isolation=serializable
       ports:
           - "5432:5432"
       environment:

@@ -5,13 +5,14 @@ import (
 	"strconv"
 	"database/sql"
 	"log"
-
-	"github.com/SemyonL95/social-tournament-service/src/database"
-	"github.com/SemyonL95/social-tournament-service/src/validators"
-	"github.com/lib/pq"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/lib/pq"
+
+	"github.com/SemyonL95/social-tournament-service/src/database"
+	"github.com/SemyonL95/social-tournament-service/src/validators"
 )
 
 var BackersRegExp = regexp.MustCompile(`bakerId=[A-Za-z0-9]*`)
