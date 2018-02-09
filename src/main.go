@@ -236,8 +236,16 @@ func joinTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 
 	err = db.AssignToTournament(parsedTournamentId, username, bakersIds)
 	if err != nil {
-		//TODO handle different errors
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		switch err {
+		case sql.ErrNoRows:
+			http.Error(w, err.Error(), http.StatusNotFound)
+			break
+		case database.ErrNotEnoughMoney:
+			http.Error(w, err.Error(), http.StatusForbidden)
+			break
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
