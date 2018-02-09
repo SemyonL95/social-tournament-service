@@ -1,7 +1,8 @@
 package models
 
 type Result struct {
-	ID       int
-	WinnerId int `database:"winner_id"`
-	Prize    float64
+	ID           int     `db:"id"`
+	WinnerID     string  `db:"winner_id"`
+	TournamentID int     `db:"tournament_id"`
+	Prize        float64 `db:"prize"`
 }

@@ -1,8 +1,8 @@
 package models
 
-type Baker struct {
-	ID           int     `database:"id"`
-	PlayerId     int     `database:"player_id"`
-	BakerId      int     `database:"baker_id"`
-	TournamentID float64 `database:"tournament_id"`
+type Backer struct {
+	ID           int    `db:"id"`
+	PlayerID     string `db:"player_id"`
+	BackerID     string `db:"backer_id"`
+	TournamentID int    `db:"tournament_id"`
 }
