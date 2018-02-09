@@ -1,7 +1,7 @@
 package models
 
 type Player struct {
-	Id int
-	UserId int `database: "user_id"`
-	Deposit float64
+	ID           int `database:"id"`
+	UserID       int `database:"user_id"`
+	TournamentID int `database:"tournament_id"`
 }

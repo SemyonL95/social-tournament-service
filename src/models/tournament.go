@@ -1,6 +1,6 @@
 package models
 
 type Tournament struct {
-	Id int
-	Deposit int
+	ID      int     `db:"id"`
+	Deposit float64 `db:"deposit"`
 }
