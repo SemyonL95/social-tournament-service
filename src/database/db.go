@@ -3,13 +3,12 @@ package database
 import (
 	"fmt"
 	"log"
-	"errors"
+	"database/sql"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/SemyonL95/social-tournament-service/src/models"
-	"database/sql"
-	"github.com/lib/pq"
 )
 
 const (
@@ -19,8 +18,6 @@ const (
 	host     = "database"
 	port     = "5432"
 )
-
-var ErrNotEnoughMoney = errors.New("not enough money")
 
 type DB struct {
 	conn *sqlx.DB
@@ -52,8 +49,8 @@ func InitDatabaseConn() (*DB, error) {
 }
 
 func (db *DB) FundOrCreateUser(playerID string, points float64) error {
-	sqlInsertUsers := `INSERT INTO users (username, points) VALUES ($1, $2) 
-			ON CONFLICT (username) DO UPDATE SET points = $2;`
+	sqlInsertUsers := `INSERT INTO users (id, points) VALUES ($1, $2) 
+			ON CONFLICT (id) DO UPDATE SET points = $2;`
 
 	_, err := db.conn.Exec(sqlInsertUsers, playerID, points)
 
@@ -80,8 +77,12 @@ func (db *DB) CreateTournament(id int, deposit float64) error {
 	return nil
 }
 
-func (db *DB) AssignToTournament(tournamentID int, playerID string, bakersIDs []string) error {
-	return retryTransact(db.conn, db.txAssignToTournament(tournamentID, playerID, bakersIDs), 5)
+func (db *DB) AssignToTournament(tournamentID int, playerID string, backersIDs []string) error {
+	return retryTransact(db.conn, db.txAssignToTournament(tournamentID, playerID, backersIDs), 5)
+}
+
+func (db *DB) FinishTournament(winners models.Winners) error {
+	return retryTransact(db.conn, db.txFinishTournament(winners), 5)
 }
 
 func (db *DB) txTakePointsFromUser(playerID string, points float64) func(*sqlx.Tx) error {
@@ -104,51 +105,53 @@ func (db *DB) txTakePointsFromUser(playerID string, points float64) func(*sqlx.T
 	}
 }
 
-func (db *DB) txAssignToTournament(tournamentID int, playerID string, bakersIDs []string) func(*sqlx.Tx) error {
+func (db *DB) txAssignToTournament(tournamentID int, playerID string, backersIDs []string) func(*sqlx.Tx) error {
 	return func(tx *sqlx.Tx) error {
 		var err error
-		var stmtBakers *sql.Stmt
+		var stmtBackers *sql.Stmt
+
 		tournament := models.Tournament{}
-		err = tx.Get(&tournament, "SELECT * FROM tournaments WHERE id = $1", tournamentID)
+		err = tx.Get(&tournament, "SELECT * FROM tournaments WHERE id = $1 AND finished = FALSE", tournamentID)
 		if err != nil {
 			return err
 		}
 
+		existsPlayer := models.Player{}
+		err = tx.Get(&existsPlayer, "SELECT * FROM players WHERE user_id = $1", playerID)
+		if existsPlayer.ID != 0 {
+			return ErrUserAlreadyJoined
+		}
+
 		var participants []models.User
-		if bakersIDs != nil {
-			sqlSelectUsers, tempBakersIDs := queryBuildWhereInSelectUsers(bakersIDs)
-			err := tx.Select(&participants, sqlSelectUsers, tempBakersIDs...)
+		if backersIDs != nil {
+			sqlSelectUsers, tempBackersIDs := queryBuildWhereInSelectUsers(backersIDs)
+			err := tx.Select(&participants, sqlSelectUsers, tempBackersIDs...)
 			if err != nil {
-				log.Println("0")
 				return err
 			}
 
-			stmtBakers, err = tx.Prepare("INSERT INTO bakers (player_id, baker_id, tournamen_id) VALUES ($1, $2, $3)")
+			stmtBackers, err = tx.Prepare("INSERT INTO backers (player_id, backer_id, tournament_id) VALUES ($1, $2, $3)")
 			if err != nil {
 				return err
 			}
-			defer stmtBakers.Close()
+			defer stmtBackers.Close()
 		}
 
 		player := models.User{}
 		err = tx.Get(&player, querySelectUserForUpdate, playerID)
 		if err != nil {
-			log.Println("1")
 			return err
 		}
 
 		participants = append(participants, player)
 		tournamentDeposit := tournament.Deposit / float64(len(participants))
-		log.Println(tournamentDeposit)
 		stmtUsers, err := tx.PrepareNamed(queryUpdateUsersCredits)
 		if err != nil {
-			log.Println("2")
 			return err
 		}
 		defer stmtUsers.Close()
 
 		if err != nil {
-			log.Println("3")
 			return err
 		}
 
@@ -161,20 +164,17 @@ func (db *DB) txAssignToTournament(tournamentID int, playerID string, bakersIDs 
 			participant.Points -= tournamentDeposit
 			_, err = stmtUsers.Exec(&participant)
 			if err != nil {
-				log.Println("4")
 				return err
 			}
 
-			if participant.Username == playerID {
-				_, err := tx.Exec("INSERT INTO players (user_id, tournamen_id) VALUES ($1, $2)", player.ID, tournament.ID)
+			if participant.ID == playerID {
+				_, err := tx.Exec("INSERT INTO players (user_id, tournament_id) VALUES ($1, $2)", player.ID, tournament.ID)
 				if err != nil {
-					log.Println("5")
 					return err
 				}
 			} else {
-				_, err := stmtBakers.Exec(player.ID, participant.ID, tournament.ID)
+				_, err := stmtBackers.Exec(player.ID, participant.ID, tournament.ID)
 				if err != nil {
-					log.Println("7")
 					return err
 				}
 			}
@@ -185,18 +185,81 @@ func (db *DB) txAssignToTournament(tournamentID int, playerID string, bakersIDs 
 
 }
 
+func (db *DB) txFinishTournament(winners models.Winners) func(*sqlx.Tx) error {
+	return func(tx *sqlx.Tx) error {
+		tournament := models.Tournament{}
+		err := tx.Get(&tournament, "SELECT * FROM tournaments WHERE id = $1 AND finished = FALSE", winners.TournamentID)
+		if err != nil {
+			return err
+		}
+
+		querySelectUsers := `SELECT users.id, users.points FROM players
+ 				  LEFT JOIN users ON players.user_id = users.id 
+ 				  WHERE players.tournament_id = $1 AND players.user_id = $2
+				  	UNION ALL
+					  SELECT users.id, users.points FROM backers
+					  LEFT JOIN users ON backers.backer_id = users.id
+					  WHERE backers.tournament_id = $1 AND backers.player_id = $2`
+
+		stmtSelectUsers, err := tx.Preparex(querySelectUsers)
+		if err != nil {
+			return nil
+		}
+		defer stmtSelectUsers.Close()
+		stmtUpdateUsers, err := tx.PrepareNamed(queryUpdateUsersCredits)
+		if err != nil {
+			return err
+		}
+		defer stmtUpdateUsers.Close()
+		stmtCreateResult, err := tx.Preparex(`INSERT INTO results (winner_id, tournament_id, prize) VALUES ($1, $2, $3)`)
+		if err != nil {
+			return err
+		}
+		defer stmtCreateResult.Close()
+
+		for _, winner := range winners.Winners {
+			var users []models.User
+			err = stmtSelectUsers.Select(&users, winners.TournamentID, winner.PlayerID)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+
+			prize := winner.Prize / float64(len(users))
+			for _, user := range users {
+				user.Points += prize
+				_, err := stmtUpdateUsers.Exec(&user)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = stmtCreateResult.Exec(winner.PlayerID, winners.TournamentID, winner.Prize, )
+			if err != nil {
+				return err
+			}
+		}
+
+		_, err = tx.Exec("UPDATE tournaments SET finished = TRUE WHERE id = $1", winners.TournamentID)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
 func queryBuildWhereInSelectUsers(IDs []string) (string, []interface{}) {
 	queryStr := ""
-	var tempBakersIDs []interface{}
+	var tempBackersIDs []interface{}
 
 	for i, _ := range IDs {
 		queryStr += fmt.Sprint("$", i+1, ",")
-		tempBakersIDs = append(tempBakersIDs, IDs[i])
+		tempBackersIDs = append(tempBackersIDs, IDs[i])
 	}
-	queryStr = queryStr[0:len(queryStr)-1]
-	sqlSelectUsers := fmt.Sprintf("SELECT * FROM users WHERE username IN (%s) FOR UPDATE", queryStr)
+	queryStr = queryStr[0: len(queryStr)-1]
+	sqlSelectUsers := fmt.Sprintf("SELECT * FROM users WHERE id IN (%s) FOR UPDATE", queryStr)
 
-	return sqlSelectUsers, tempBakersIDs
+	return sqlSelectUsers, tempBackersIDs
 }
 
 func transact(db *sqlx.DB, txFunc func(*sqlx.Tx) error) (err error) {
@@ -230,13 +293,13 @@ func retryTransact(db *sqlx.DB, txFunc func(*sqlx.Tx) error, retryNumber int) er
 			return err
 		}
 		driverError, ok := err.(*pq.Error)
-		if !ok{
+		if !ok {
 			return err
 		}
 
 		//40001 serialization_failure
 		//40P01 deadlock_detected
-		if  driverError.Code != "40001" && driverError.Code != "40P01"{
+		if driverError.Code != "40001" && driverError.Code != "40P01" {
 			return err
 		}
 	}
