@@ -14,7 +14,7 @@ func queryBuildWhereInSelectUsers(IDs []string) (string, []interface{}) {
 		queryStr += fmt.Sprint("$", i+1, ",")
 		tempBackersIDs = append(tempBackersIDs, IDs[i])
 	}
-	queryStr = queryStr[0: len(queryStr)-1]
+	queryStr = queryStr[0 : len(queryStr)-1]
 	sqlSelectUsers := fmt.Sprintf("SELECT * FROM users WHERE id IN (%s) FOR UPDATE", queryStr)
 
 	return sqlSelectUsers, tempBackersIDs

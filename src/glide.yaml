@@ -2,3 +2,5 @@ package: github.com/SemyonL95/social-tournament-service/src
 import:
 - package: github.com/jmoiron/sqlx
 - package: github.com/lib/pq
+- package: gopkg.in/h2non/baloo.v3
+  version: ^3.0.0
