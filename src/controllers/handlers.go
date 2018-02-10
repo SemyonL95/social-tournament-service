@@ -276,8 +276,8 @@ func balance(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpUser := map[string]string{
-		"balance":  strconv.FormatFloat(user.Points, 'f', 2, 64),
+	tmpUser := map[string]interface{}{
+		"balance":  user.Points,
 		"playerId": user.ID,
 	}
 
