@@ -1,8 +1,8 @@
 package database
 
 import (
-	"log"
 	"database/sql"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 
@@ -158,7 +158,7 @@ func (db *DB) txFinishTournament(winners models.Winners) func(*sqlx.Tx) error {
 					return err
 				}
 			}
-			_, err = stmtCreateResult.Exec(winner.PlayerID, winners.TournamentID, winner.Prize, )
+			_, err = stmtCreateResult.Exec(winner.PlayerID, winners.TournamentID, winner.Prize)
 			if err != nil {
 				return err
 			}

@@ -1,20 +1,20 @@
 package controllers
 
 import (
-	"net/http"
-	"strconv"
 	"database/sql"
-	"fmt"
-	"strings"
-	"io/ioutil"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/lib/pq"
 
 	"github.com/SemyonL95/social-tournament-service/src/database"
-	"github.com/SemyonL95/social-tournament-service/src/validators"
 	"github.com/SemyonL95/social-tournament-service/src/models"
+	"github.com/SemyonL95/social-tournament-service/src/validators"
 )
 
 var BackersRegExp = regexp.MustCompile(`backerId=[A-Za-z0-9]*`)
@@ -276,11 +276,10 @@ func balance(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpUser := map[string]string {
-		"balance": strconv.FormatFloat(user.Points, 'f',2, 64),
+	tmpUser := map[string]string{
+		"balance":  strconv.FormatFloat(user.Points, 'f', 2, 64),
 		"playerId": user.ID,
 	}
-
 
 	res, err := json.Marshal(&tmpUser)
 	if err != nil {

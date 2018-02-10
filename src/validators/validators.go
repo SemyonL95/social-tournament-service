@@ -1,9 +1,9 @@
 package validators
 
 import (
-	"regexp"
-	"net/http"
 	"fmt"
+	"net/http"
+	"regexp"
 )
 
 var playerIDRegexp = regexp.MustCompile("^[A-Za-z0-9]{1,20}$")

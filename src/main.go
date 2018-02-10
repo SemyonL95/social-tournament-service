@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/SemyonL95/social-tournament-service/src/database"
 	"github.com/SemyonL95/social-tournament-service/src/controllers"
+	"github.com/SemyonL95/social-tournament-service/src/database"
 )
 
 func main() {
