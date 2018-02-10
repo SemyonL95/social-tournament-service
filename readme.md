@@ -30,7 +30,7 @@ in endpoint #4 (/resultTournament) added new param tournamentId, example:
 ```
 
 ## TESTS
-I have e2e test which cover use case from test task, for run test just run command:
+I have e2e test which cover use case from test task, for run test just exec command:
 
  go test ./src
 
