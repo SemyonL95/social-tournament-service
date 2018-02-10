@@ -104,7 +104,7 @@ func balanceUsers(t *testing.T) {
 		Status(200).
 		Status(200).
 		JSON(`{
-				"balance": "550.00",
+				"balance": 550.00,
 				"playerId": "P1"
 			}`).
 		Done()
@@ -115,7 +115,7 @@ func balanceUsers(t *testing.T) {
 		Status(200).
 		Status(200).
 		JSON(`{
-				"balance": "550.00",
+				"balance": 550.00,
 				"playerId": "P2"
 			}`).
 		Done()
@@ -125,7 +125,7 @@ func balanceUsers(t *testing.T) {
 		Expect(t).
 		Status(200).
 		JSON(`{
-				"balance": "550.00",
+				"balance": 550.00,
 				"playerId": "P3"
 			}`).
 		Done()
@@ -135,7 +135,7 @@ func balanceUsers(t *testing.T) {
 		Expect(t).
 		Status(200).
 		JSON(`{
-				"balance": "750.00",
+				"balance": 750.00,
 				"playerId": "P4"
 			}`).
 		Done()
@@ -145,7 +145,7 @@ func balanceUsers(t *testing.T) {
 		Expect(t).
 		Status(200).
 		JSON(`{
-				"balance": "0.00",
+				"balance": 0.00,
 				"playerId": "P5"
 			}`).
 		Done()
