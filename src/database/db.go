@@ -4,15 +4,9 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"os"
 )
 
-const (
-	user     = "postgres"
-	dbname   = "postgres"
-	password = "mypass"
-	host     = "database"
-	port     = "5432"
-)
 
 type DB struct {
 	conn *sqlx.DB
@@ -21,11 +15,11 @@ type DB struct {
 func InitDatabaseConn() (*DB, error) {
 	connInfo := fmt.Sprintf(
 		"user=%s dbname=%s password=%s host=%s port=%s sslmode=disable",
-		user,
-		dbname,
-		password,
-		host,
-		port,
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_PASS"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
 	)
 
 	db, err := sqlx.Open("postgres", connInfo)
