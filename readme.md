@@ -33,3 +33,6 @@ in endpoint #4 (/resultTournament) added new param tournamentId, example:
 I have e2e test which cover use case from test task, for run test just run command:
 
  go test ./src
+
+### P.S.
+ I added .env file into the repo, i know that it's not correct to do things like this, but it for simplification of project deploy
