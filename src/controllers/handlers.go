@@ -19,36 +19,30 @@ import (
 
 var BackersRegExp = regexp.MustCompile(`backerId=[A-Za-z0-9]*`)
 
-//TODO REFACTOR ALL THIS CRAP
 func fund(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	//TODO refactor from credits to points everywhere
 	username := r.FormValue("playerId")
-	credits := r.FormValue("points")
+	points := r.FormValue("points")
 
-	validated := validators.ValidateUsername(username)
-	if !validated {
-		http.Error(w, "playerId is required and have to be a string A-Za-z0-9 min: 1, max: 20 characters \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateUsername(username, "playerId", w); !ok {
 		return
 	}
 
-	parsedCredits, err := strconv.ParseFloat(credits, 64)
+	parsedPoints, err := strconv.ParseFloat(points, 64)
 	if err != nil {
 		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
 	}
 
-	validated = validators.ValidateFloatNotNegative(parsedCredits)
-	if !validated {
-		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateFloatNotNegative(parsedPoints, "points", w); !ok {
 		return
 	}
 
-	err = db.FundOrCreateUser(username, parsedCredits)
+	err = db.FundOrCreateUser(username, parsedPoints)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -59,33 +53,28 @@ func fund(db *database.DB, w http.ResponseWriter, r *http.Request) {
 }
 
 func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	if ok := validators.ValidateMethod("GET", r, w); !ok {
 		return
 	}
 
 	username := r.FormValue("playerId")
-	credits := r.FormValue("points")
+	points := r.FormValue("points")
 
-	validated := validators.ValidateUsername(username)
-	if !validated {
-		http.Error(w, "playerId is required and have to be a string A-Za-z0-9 min: 1, max: 20 characters \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateUsername(username, "playerId", w); !ok {
 		return
 	}
 
-	parsedCredits, err := strconv.ParseFloat(credits, 64)
+	parsedPoints, err := strconv.ParseFloat(points, 64)
 	if err != nil {
 		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
 	}
 
-	validated = validators.ValidateFloatNotNegative(parsedCredits)
-	if !validated {
-		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateFloatNotNegative(parsedPoints, "points", w); !ok {
 		return
 	}
 
-	err = db.TakePointsFromUser(username, parsedCredits)
+	err = db.TakePointsFromUser(username, parsedPoints)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -105,39 +94,30 @@ func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
 }
 
 func announceTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	if ok := validators.ValidateMethod("GET", r, w); !ok {
 		return
 	}
 
-	id := r.FormValue("id")
+	id := r.FormValue("tournamentId")
 	deposit := r.FormValue("deposit")
-
-	if id == "" {
-		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
-		return
-	}
 
 	parsedId, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		http.Error(w, "tournamentId is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
 	}
 
-	if parsedId <= 0 {
-		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateIntNotNegative(parsedId, "tournamentId", w); !ok {
 		return
 	}
 
 	parsedDeposit, err := strconv.ParseFloat(deposit, 64)
 	if err != nil {
-		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		http.Error(w, "deposit is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
 		return
 	}
 
-	validated := validators.ValidateFloatNotNegative(parsedDeposit)
-	if !validated {
-		http.Error(w, "points is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateFloatNotNegative(parsedDeposit, "deposit", w); !ok {
 		return
 	}
 
@@ -161,8 +141,7 @@ func announceTournament(db *database.DB, w http.ResponseWriter, r *http.Request)
 }
 
 func joinTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	if ok := validators.ValidateMethod("GET", r, w); !ok {
 		return
 	}
 	rawBackersIds := BackersRegExp.FindAllString(r.URL.RawQuery, -1)
@@ -172,17 +151,10 @@ func joinTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	var backersIds []string
 	for _, str := range rawBackersIds {
 		splitedStr := strings.Split(str, "=")
-		validated := validators.ValidateUsername(splitedStr[1])
-		if !validated {
-			http.Error(w, "backerId have to be a string A-Za-z0-9 min: 1, max: 20 characters", http.StatusUnprocessableEntity)
+		if ok := validators.ValidateUsername(splitedStr[1], "playerId", w); !ok {
 			return
 		}
 		backersIds = append(backersIds, splitedStr[1])
-	}
-
-	if tournamentId == "" {
-		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
-		return
 	}
 
 	parsedTournamentId, err := strconv.Atoi(tournamentId)
@@ -191,14 +163,11 @@ func joinTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if parsedTournamentId <= 0 {
-		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateIntNotNegative(parsedTournamentId, "tournamentId", w); !ok {
 		return
 	}
 
-	validated := validators.ValidateUsername(username)
-	if !validated {
-		http.Error(w, "playerId is required and have to be a string A-Za-z0-9 min: 1, max: 20 characters \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateUsername(username, "playerId", w); !ok {
 		return
 	}
 
@@ -225,8 +194,7 @@ func joinTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 }
 
 func resultTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	if ok := validators.ValidateMethod("POST", r, w); !ok {
 		return
 	}
 
@@ -244,28 +212,29 @@ func resultTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if winners.TournamentID == 0 {
-		http.Error(w, "id is required and id have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+	if ok := validators.ValidateIntNotNegative(winners.TournamentID, "tournamentId", w); !ok {
 		return
 	}
 
 	for _, winner := range winners.Winners {
-		validated := validators.ValidateUsername(winner.PlayerID)
-		if !validated {
-			http.Error(w, "backerId have to be a string A-Za-z0-9 min: 1, max: 20 characters", http.StatusUnprocessableEntity)
+		if ok := validators.ValidateUsername(winner.PlayerID, "playerId", w); !ok {
 			return
 		}
 
-		validated = validators.ValidateFloatNotNegative(winner.Prize)
-		if !validated {
-			http.Error(w, "prize is required and points have to be numeric and not negative \n", http.StatusUnprocessableEntity)
+		if ok := validators.ValidateFloatNotNegative(winner.Prize, "prize", w); !ok {
 			return
 		}
 	}
 
 	err = db.FinishTournament(winners)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		switch err {
+		case database.ErrNoPlayersInTournament:
+			http.Error(w, err.Error(), http.StatusNotFound)
+			break
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -274,8 +243,7 @@ func resultTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 }
 
 func reset(db *database.DB, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	if ok := validators.ValidateMethod("GET", r, w); !ok {
 		return
 	}
 	err := db.Truncate()
@@ -285,5 +253,42 @@ func reset(db *database.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte("success"))
+	return
+}
+
+func balance(db *database.DB, w http.ResponseWriter, r *http.Request) {
+	if ok := validators.ValidateMethod("GET", r, w); !ok {
+		return
+	}
+	username := r.FormValue("playerId")
+	if ok := validators.ValidateUsername(username, "playerId", w); !ok {
+		return
+	}
+	user, err := db.GetUserBalance(username)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			http.Error(w, err.Error(), http.StatusNotFound)
+			break
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	tmpUser := map[string]string {
+		"balance": strconv.FormatFloat(user.Points, 'f',2, 64),
+		"playerId": user.ID,
+	}
+
+
+	res, err := json.Marshal(&tmpUser)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(res)
 	return
 }
