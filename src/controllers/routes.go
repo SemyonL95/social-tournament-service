@@ -22,6 +22,9 @@ func router(db *database.DB) {
 	http.HandleFunc("/resultTournament", func(w http.ResponseWriter, r *http.Request) {
 		resultTournament(db, w, r)
 	})
+	http.HandleFunc("/balance", func(w http.ResponseWriter, r *http.Request) {
+		balance(db, w, r)
+	})
 	http.HandleFunc("/reset", func(w http.ResponseWriter, r *http.Request) {
 		reset(db, w, r)
 	})
