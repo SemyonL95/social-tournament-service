@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var test = baloo.New("http://app")
+var test = baloo.New("localhost")
 
 func TestCase(t *testing.T) {
 	test.Get("/reset").
