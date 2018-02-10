@@ -1,0 +1,41 @@
+hash: 1e63573b6584dc0edb58456fdc096083093dce22f97820958b88cbdc8cfc9151
+updated: 2018-02-10T17:33:45.290232+02:00
+imports:
+- name: github.com/jmoiron/sqlx
+  version: 05cef0741ade10ca668982355b3f3f0bcf0ff0a8
+  subpackages:
+  - reflectx
+- name: github.com/lib/pq
+  version: 88edab0803230a3898347e77b474f8c1820a1f20
+  subpackages:
+  - oid
+- name: gopkg.in/h2non/baloo.v3
+  version: bcac7e061d45d1443121ab1868b8907c0d233f38
+  subpackages:
+  - assert
+testImports:
+- name: github.com/xeipuuv/gojsonpointer
+  version: 4e3ac2762d5f479393488629ee9370b50873b3a6
+- name: github.com/xeipuuv/gojsonreference
+  version: bd5ef7bd5415a7ac448318e64f11a24cd21e594b
+- name: github.com/xeipuuv/gojsonschema
+  version: 8bcffc811467a5f691810420385be6e66b35a317
+- name: golang.org/x/net
+  version: f5dfe339be1d06f81b22525fe34671ee7d2c8904
+  subpackages:
+  - publicsuffix
+- name: gopkg.in/h2non/gentleman.v2
+  version: e0f81be2f4064ea7aa7470e9daddd2dc8e8152c7
+  subpackages:
+  - context
+  - middleware
+  - mux
+  - plugin
+  - plugins/body
+  - plugins/bodytype
+  - plugins/cookies
+  - plugins/headers
+  - plugins/multipart
+  - plugins/query
+  - plugins/url
+  - utils

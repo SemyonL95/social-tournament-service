@@ -1,9 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"github.com/SemyonL95/social-tournament-service/src/controllers"
+	"github.com/SemyonL95/social-tournament-service/src/database"
 )
 
 func main() {
-	fmt.Println("hello world")
+	db, err := database.InitDatabaseConn()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	controllers.Run(db)
 }

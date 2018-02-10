@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  postgres:
+      image: postgres:alpine
+      volumes:
+          - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      command: postgres -c default_transaction_isolation=serializable
+      ports:
+          - "5432:${DB_PORT}"
+      environment:
+          POSTGRES_PASSWORD: ${DB_PASS}
+
+  go:
+      build: ./docker/Go
+      volumes:
+          - .:/go/src/github.com/SemyonL95/social-tournament-service
+      working_dir: /go/src/github.com/SemyonL95/social-tournament-service
+      command: go run src/main.go
+      links:
+          - postgres:database
+      ports:
+          - "8080:8080"
+      environment:
+        DB_HOST: ${DB_HOST}
+        DB_USER: ${DB_USER}
+        DB_NAME: ${DB_NAME}
+        DB_PASS: ${DB_PASS}
+        DB_PORT: ${DB_PORT}
+
+  proxy:
+      image: nginx:latest
+      ports:
+          - "80:80"
+          - "443:443"
+      volumes:
+          - ./docker/Nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      links:
+          - go:app
