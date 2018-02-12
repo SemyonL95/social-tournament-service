@@ -124,7 +124,7 @@ func (db *DB) txFinishTournament(winners models.Winners) func(*sqlx.Tx) error {
 
 		stmtSelectUsers, err := tx.Preparex(querySelectUsers)
 		if err != nil {
-			return nil
+			return err
 		}
 		defer stmtSelectUsers.Close()
 		stmtUpdateUsers, err := tx.PrepareNamed(queryUpdateUsersCredits)
