@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-
 type DB struct {
 	conn *sqlx.DB
 }
