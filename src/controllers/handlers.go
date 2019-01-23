@@ -79,10 +79,8 @@ func take(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case sql.ErrNoRows:
 			http.Error(w, err.Error(), http.StatusNotFound)
-			break
 		case database.ErrNotEnoughMoney:
 			http.Error(w, err.Error(), http.StatusForbidden)
-			break
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -176,13 +174,10 @@ func joinTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case sql.ErrNoRows:
 			http.Error(w, err.Error(), http.StatusNotFound)
-			break
 		case database.ErrNotEnoughMoney:
 			http.Error(w, err.Error(), http.StatusForbidden)
-			break
 		case database.ErrUserAlreadyJoined:
 			http.Error(w, err.Error(), http.StatusForbidden)
-			break
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -231,7 +226,6 @@ func resultTournament(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case database.ErrNoPlayersInTournament:
 			http.Error(w, err.Error(), http.StatusNotFound)
-			break
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -269,7 +263,6 @@ func balance(db *database.DB, w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case sql.ErrNoRows:
 			http.Error(w, err.Error(), http.StatusNotFound)
-			break
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
